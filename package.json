@@ -1,0 +1,31 @@
+{
+  "name": "asyncplify-sort",
+  "version": "0.0.1",
+  "description": "In-memory and external sort for asyncplify",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danylaporte/asyncplify-sort.git"
+  },
+  "keywords": [
+    "sort",
+    "external-sort",
+    "asyncplify",
+    "frp",
+    "order"
+  ],
+  "author": "Dany Laporte",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danylaporte/asyncplify-sort/issues"
+  },
+  "homepage": "https://github.com/danylaporte/asyncplify-sort",
+  "dependencies": {
+    "asyncplify": "^0.3.8",
+    "asyncplify-fs": "0.0.1",
+    "temp": "^0.8.1"
+  }
+}
