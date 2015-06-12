@@ -17,6 +17,7 @@ function itShouldEmitOrderedResultsOn(count, title) {
 				},
 				end: function (err) {
 					assert(err === null);
+					index.should.equal(count + 1);
 					done();
 				}
 			});

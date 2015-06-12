@@ -24,9 +24,10 @@
   },
   "homepage": "https://github.com/danylaporte/asyncplify-sort",
   "dependencies": {
-    "asyncplify": "^0.3.11",
+    "asyncplify": "^0.4.2",
+    "asyncplify-fs": "0.0.5",
     "debug": "^2.2.0",
-    "temp": "^0.8.1"
+    "temp": "^0.8.3"
   },
   "devDependencies": {
     "mocha": "^2.2.5",
