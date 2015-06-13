@@ -1,5 +1,3 @@
-## NOTE: IN ACTIVE DEVELOPMENT (NOT READY)
-
 # asyncplify-sort
 In-memory and external sort for asyncplify.
 
@@ -29,6 +27,10 @@ asyncplify
 // 2
 // end.
 ```
+
+## TODO
+- Add support for sorting using multiple core. Test using worker and child process.
+- Add support for sorting on multiple machine.
 
 ## License
 The MIT License (MIT)
