@@ -1,6 +1,6 @@
 {
   "name": "asyncplify-sort",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "In-memory and external sort for asyncplify",
   "main": "index.js",
   "scripts": {
