@@ -22,25 +22,41 @@ function ExpandMerge(options, on, source) {
 
 ExpandMerge.prototype = {
 	do: function () {
-		if (!this.source && this.ready.length > 1 && this.state === states.RUNNING) {
-
-			debug('merging 2 segments of %d', this.ready.length);
-
-			var source = segmentMerge({
-				comparer: this.comparer,
-				left: this.ready.pop(),
-				right: this.ready.pop()
-			});
-
-			if (this.ready.length) {
-				source = source.pipe(asyncplifyFs.toPaged(this.size));
-			} else {
-				this.emit = this.emitValue;
-				this.end = this.endValue;
-			}
-
-			source._subscribe(this);
+		if (!this.source && this.state === states.RUNNING) {
+			if (this.ready.length > 1) 
+				this.doMerge();
+			else if (this.ready.length)
+				this.doEmitValues();
 		}
+	},
+	doEmitValues: function () {
+		debug('emit received segment');
+		this.emit = this.emitValue;
+		this.end = this.endValue;
+		
+		asyncplifyFs
+			.fromPaged(this.ready[0])
+			._subscribe(this);
+	},
+	doMerge: function () {
+		debug('merging 2 segments of %d', this.ready.length);
+
+		var source = segmentMerge({
+			comparer: this.comparer,
+			left: this.ready.pop(),
+			right: this.ready.pop()
+		});
+
+		if (this.ready.length) {
+			source = source.pipe(asyncplifyFs.toPaged(this.size));
+			this.emit = this.emitSegment;
+			this.end = this.endSegment;
+		} else {
+			this.emit = this.emitValue;
+			this.end = this.endValue;
+		}
+
+		source._subscribe(this);
 	},
 	emit: function (filename) {
 		debug('receive a new page');
