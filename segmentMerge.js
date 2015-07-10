@@ -1,44 +1,46 @@
 var Asyncplify = require('asyncplify');
 var SegmentLoader = require('./segmentLoader');
-var states = Asyncplify.states;
 
-function SegmentMerge(options, on) {
+function SegmentMerge(options, sink) {
 	this.comparer = options.comparer;
 	this.left = new SegmentLoader(this, options.left);
 	this.right = new SegmentLoader(this, options.right);
-	this.on = on;
-	this.state = states.RUNNING;
-	
-	on.source = this;
+	this.sink = sink;
+	this.sink.source = this;
 }
 
 SegmentMerge.prototype = {
+	close: function () {
+		this.sink = null;
+		this.left.dispose();
+		this.right.dispose();
+	},
 	combine: function () {
-		while (this.left.index < this.left.items.length && this.right.index < this.right.items.length && this.state === states.RUNNING) {
+		while (this.left.index < this.left.items.length && this.right.index < this.right.items.length && this.sink) {
 			var leftItem = this.left.items[this.left.index];
 			var rightItem = this.right.items[this.right.index];
 			var compare = this.comparer(leftItem, rightItem);
 
 			if (compare < 0) {
 				this.left.index++;
-				this.on.emit(leftItem);
+				this.sink.emit(leftItem);
 			} else if (compare > 0) {
 				this.right.index++;
-				this.on.emit(rightItem);
+				this.sink.emit(rightItem);
 			} else {
 				this.left.index++;
-				this.on.emit(leftItem);
+				this.sink.emit(leftItem);
 
-				if (this.state === states.RUNNING) {
+				if (this.sink) {
 					this.right.index++;
-					this.on.emit(rightItem);
+					this.sink.emit(rightItem);
 				}
 			}
 		}
 	},
 	combineRemaining: function (segment) {
-		while (segment.index < segment.items.length && this.state === states.RUNNING) {
-			this.on.emit(segment.items[segment.index++]);
+		while (segment.index < segment.items.length && this.sink) {
+			this.sink.emit(segment.items[segment.index++]);
 		}
 	},
 	do: function () {
@@ -51,9 +53,9 @@ SegmentMerge.prototype = {
 		this.doEnd();
 	},
 	doEnd: function () {
-		if (!this.left.filenames.length && !this.right.filenames.length && this.state === states.RUNNING) {
-			this.state = states.CLOSED;
-			this.on.end(null);
+		if (!this.left.filenames.length && !this.right.filenames.length && this.sink) {
+			this.sink.end(null);
+			this.sink = null;
 		}
 	},
 	dispose: function () {
@@ -61,7 +63,7 @@ SegmentMerge.prototype = {
 		this.right.dispose();
 	},
 	ensureLoaded: function () {
-		if (this.state === states.RUNNING) {
+		if (this.sink) {
 			this.left.loadPage();
 			this.right.loadPage();
 		}
@@ -70,19 +72,12 @@ SegmentMerge.prototype = {
 		if (err) {
 			this.dispose();
 
-			if (this.state !== states.CLOSED) {
-				this.state = states.CLOSED;
-				this.on.end(err);
+			if (this.sink) {
+				this.sink.end(err);
+				this.sink = null;
 			}
 		} else {
 			this.do();
-		}
-	},
-	setState: function (state) {
-		if (this.state !== state && this.state !== states.CLOSED) {
-			this.state = state;
-			if (state === states.RUNNING) this.do();
-			if (state === states.CLOSED) this.dispose();
 		}
 	}
 };
