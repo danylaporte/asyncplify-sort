@@ -5,22 +5,24 @@ var fs = require('fs');
 var segmentMerge = require('./segmentMerge');
 var states = Asyncplify.states;
 
-function ExpandMerge(options, sink, source) {
+function ExpandMerge(options, on, source) {
 	this.comparer = options.comparer;
 	this.filenames = options.filenames;
+	this.on = on;
 	this.ready = options.ready;
-	this.sink = sink;
-	this.sink.source = this;
 	this.source = null;
 	this.size = options.size;
+	this.state = states.RUNNING;
 
 	debug('source subscribing');
+
+	on.source = this;
 	source._subscribe(this);
 }
 
 ExpandMerge.prototype = {
 	do: function () {
-		if (!this.source && this.sink) {
+		if (!this.source && this.state === states.RUNNING) {
 			if (this.ready.length > 1) 
 				this.doMerge();
 			else if (this.ready.length)
@@ -65,7 +67,7 @@ ExpandMerge.prototype = {
 		this.filenames.push(filename);
 	},
 	emitValue: function (value) {
-		this.sink.emit(value);
+		this.on.emit(value);
 	},
 	end: function (err) {
 		this.source = null;
@@ -73,7 +75,8 @@ ExpandMerge.prototype = {
 		if (!err) debug('finish receiving pages.');
 
 		if (err || !this.ready.length) {
-			this.sink.end(err);
+			this.state = states.CLOSED;
+			this.on.end(err);
 		} else {
 			this.emit = this.emitSegment;
 			this.end = this.endSegment;
@@ -88,18 +91,23 @@ ExpandMerge.prototype = {
 
 		if (err) {
 			debug('segment merge error', err);
-			this.sink.end(err);
+			this.state = states.CLOSED;
+			this.on.end(err);
 		} else {
 			debug('segment of %d pages merged', count);
 			this.do();
 		}
 	},
 	endValue: function (err) {
-		this.sink.end(err);
+		this.state = states.CLOSED;
+		this.on.end(err);
 	},
 	setState: function (state) {
-		if (this.source) this.source.close();
-		this.source = null;
+		if (this.state !== state && this.state !== states.CLOSED) {
+			this.state = state;
+			if (this.source) this.source.setState(state);
+			if (this.state === states.RUNNING) this.do();
+		}
 	}
 };
 

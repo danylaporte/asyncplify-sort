@@ -31,5 +31,5 @@ describe('asyncplify-sort', function () {
 	itShouldEmitOrderedResultsOn(10000, 'page limit end');
 	itShouldEmitOrderedResultsOn(10001, 'page limit start');
 	itShouldEmitOrderedResultsOn(100000, 'large dataset');
-	itShouldEmitOrderedResultsOn(1000000, 'very large dataset', 100000);
+	//itShouldEmitOrderedResultsOn(1000000, 'very large dataset', 100000);
 });
